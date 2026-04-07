@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+.history::-webkit-scrollbar-thumb{
+   background: gray;
+  border-radius: 9999px;
+}
+.chatSecion::-webkit-scrollbar{
+  display: none;
+}
+/* width */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* track */
+::-webkit-scrollbar-track {
+  background: #111827; /* gray-900 */
+}
+
+/* thumb */
+::-webkit-scrollbar-thumb {
+  background: #f97316;
+  border-radius: 9999px;
+}
+
+/* hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #f97316;
+}
