@@ -9,21 +9,91 @@ export const useChat = () => {
 
     const dispatch = useDispatch()
     const [streamingMessage, setStreamingMessage] = useState(null)
+    const TYPE_INTERVAL_MS = 20
+    const TYPE_CHARS_PER_TICK = 2
     const socketRef = useRef(null)
     const listenersBoundRef = useRef(false)
     const activeRequestIdRef = useRef(null)
     const streamBuffersRef = useRef({})
+    const targetBuffersRef = useRef({})
+    const displayBuffersRef = useRef({})
     const startReceivedRef = useRef(new Set())
     const finalizedRequestRef = useRef(new Set())
     const userMessageAddedRef = useRef(new Set())
     const socketHandlersRef = useRef({})
+    const pendingEndRef = useRef({})
+    const typingIntervalRef = useRef(null)
+
+    function stopTypingTicker() {
+        if (!typingIntervalRef.current) return
+        clearInterval(typingIntervalRef.current)
+        typingIntervalRef.current = null
+    }
+
+    function finalizeRequest(requestId, chatId, finalContent) {
+        if (!requestId || finalizedRequestRef.current.has(requestId)) return
+        finalizedRequestRef.current.add(requestId)
+
+        if (finalContent) {
+            dispatch(addNewMessage({
+                chatId,
+                content: finalContent,
+                role: "ai",
+            }))
+        }
+
+        setStreamingMessage(null)
+        dispatch(setLoading(false))
+        clearRequestTracking(requestId)
+        scheduleCleanup(requestId)
+    }
+
+    function runTypingStep(requestId, chatId) {
+        const targetContent = targetBuffersRef.current[ requestId ] || ""
+        const currentContent = displayBuffersRef.current[ requestId ] || ""
+
+        if (currentContent.length < targetContent.length) {
+            const nextContent = targetContent.slice(0, currentContent.length + TYPE_CHARS_PER_TICK)
+            displayBuffersRef.current[ requestId ] = nextContent
+            setStreamingMessage({ requestId, chatId, content: nextContent })
+        }
+
+        const pendingEnd = pendingEndRef.current[ requestId ]
+        const latestDisplay = displayBuffersRef.current[ requestId ] || ""
+        const latestTarget = targetBuffersRef.current[ requestId ] || ""
+
+        if (pendingEnd && latestDisplay.length >= latestTarget.length) {
+            stopTypingTicker()
+            finalizeRequest(requestId, pendingEnd.chatId, pendingEnd.finalContent)
+            return
+        }
+
+        if (!pendingEnd && latestDisplay.length >= latestTarget.length) {
+            stopTypingTicker()
+        }
+    }
+
+    function startTypingTicker(requestId, chatId) {
+        if (typingIntervalRef.current) return
+        typingIntervalRef.current = setInterval(() => {
+            if (requestId !== activeRequestIdRef.current) {
+                stopTypingTicker()
+                return
+            }
+            runTypingStep(requestId, chatId)
+        }, TYPE_INTERVAL_MS)
+    }
 
     function clearRequestTracking(requestId, { clearFinalized = false } = {}) {
         if (!requestId) return
         delete streamBuffersRef.current[ requestId ]
+        delete targetBuffersRef.current[ requestId ]
+        delete displayBuffersRef.current[ requestId ]
+        delete pendingEndRef.current[ requestId ]
         startReceivedRef.current.delete(requestId)
         if (activeRequestIdRef.current === requestId) {
             activeRequestIdRef.current = null
+            stopTypingTicker()
         }
         if (clearFinalized) {
             finalizedRequestRef.current.delete(requestId)
@@ -48,6 +118,9 @@ export const useChat = () => {
             startReceivedRef.current.add(requestId)
             activeRequestIdRef.current = requestId
             streamBuffersRef.current[ requestId ] = ""
+            targetBuffersRef.current[ requestId ] = ""
+            displayBuffersRef.current[ requestId ] = ""
+            delete pendingEndRef.current[ requestId ]
 
             if (isNewChat) {
                 dispatch(createNewChat({
@@ -74,10 +147,13 @@ export const useChat = () => {
             if (!requestId || requestId !== activeRequestIdRef.current || !delta) return
             if (finalizedRequestRef.current.has(requestId)) return
 
-            const currentContent = streamBuffersRef.current[ requestId ] || ""
-            const nextContent = `${currentContent}${delta}`
-            streamBuffersRef.current[ requestId ] = nextContent
-            setStreamingMessage({ requestId, chatId, content: nextContent })
+            const currentTarget = targetBuffersRef.current[ requestId ] || ""
+            const nextTarget = `${currentTarget}${delta}`
+            targetBuffersRef.current[ requestId ] = nextTarget
+            streamBuffersRef.current[ requestId ] = nextTarget
+
+            runTypingStep(requestId, chatId)
+            startTypingTicker(requestId, chatId)
         }
 
         const onEnd = (payload) => {
@@ -85,21 +161,13 @@ export const useChat = () => {
             if (!requestId || requestId !== activeRequestIdRef.current) return
             if (finalizedRequestRef.current.has(requestId)) return
 
-            finalizedRequestRef.current.add(requestId)
-            const finalContent = content || streamBuffersRef.current[ requestId ] || ""
+            const finalContent = content || targetBuffersRef.current[ requestId ] || streamBuffersRef.current[ requestId ] || ""
+            targetBuffersRef.current[ requestId ] = finalContent
+            streamBuffersRef.current[ requestId ] = finalContent
+            pendingEndRef.current[ requestId ] = { chatId, finalContent }
 
-            if (finalContent) {
-                dispatch(addNewMessage({
-                    chatId,
-                    content: finalContent,
-                    role: "ai",
-                }))
-            }
-
-            setStreamingMessage(null)
-            dispatch(setLoading(false))
-            clearRequestTracking(requestId)
-            scheduleCleanup(requestId)
+            runTypingStep(requestId, chatId)
+            startTypingTicker(requestId, chatId)
         }
 
         const onError = (payload) => {
@@ -107,6 +175,7 @@ export const useChat = () => {
             if (!requestId || requestId !== activeRequestIdRef.current) return
             if (finalizedRequestRef.current.has(requestId)) return
 
+            stopTypingTicker()
             finalizedRequestRef.current.add(requestId)
             setStreamingMessage(null)
             dispatch(setError(error || "Something went wrong while streaming"))
@@ -141,6 +210,7 @@ export const useChat = () => {
                 socket.off("chat:stream:end", onEnd)
                 socket.off("chat:stream:error", onError)
             }
+            stopTypingTicker()
             listenersBoundRef.current = false
         }
     }, [])
@@ -159,6 +229,7 @@ export const useChat = () => {
             const { chat, aiMessage } = data
             const resolvedChatId = chatId || chat?._id
 
+            
             if (!startReceivedRef.current.has(requestId) && resolvedChatId) {
                 if (!chatId) {
                     dispatch(createNewChat({
@@ -178,7 +249,7 @@ export const useChat = () => {
                 dispatch(setCurrentChatId(resolvedChatId))
             }
 
-            if (!finalizedRequestRef.current.has(requestId) && resolvedChatId) {
+            if (!startReceivedRef.current.has(requestId) && !finalizedRequestRef.current.has(requestId) && resolvedChatId) {
                 const finalContent = aiMessage?.content || streamBuffersRef.current[ requestId ] || ""
                 if (finalContent) {
                     dispatch(addNewMessage({
