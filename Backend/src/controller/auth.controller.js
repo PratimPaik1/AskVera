@@ -6,7 +6,8 @@ import { sendEmail } from "../services/mail.servics.js";
 export async function registerController(req, res) {
     try {
         const { userName, email, password } = req.body;
-        console.log(userName,email,password)
+        const backendUrl = ( process.env.CLIENT_URL).replace(/\/+$/, "")
+
         const lowerUserName = userName.toLowerCase()
         const lowerEmail = email.toLowerCase()
 
@@ -18,7 +19,7 @@ export async function registerController(req, res) {
         }
 
         const existingUser = await userModel.findOne({
-            $or: [{ email: lowerEmail }, { userName: lowerUserName }],
+            $or: [{ email: lowerEmail }],
         });
 
         if (existingUser) {
@@ -54,7 +55,7 @@ export async function registerController(req, res) {
         <p>Thank you for signing up! Please verify your email address to activate your account.</p>
 
         <p>
-            <a href="${process.env.CLIENT_URL}/api/auth/verifyEmail?token=${token}" 
+            <a href="${backendUrl}/api/auth/verifyEmail?token=${token}" 
                style="display:inline-block;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:5px;">
                Verify Your Account
             </a>
@@ -82,9 +83,10 @@ export async function registerController(req, res) {
         });
 
     } catch (err) {
+        console.log(err)
         if (err.code === 11000) {
             return res.status(400).json({
-                message: "Duplicate email or username",
+                message: "Duplicate email",
             });
         }
 
@@ -169,6 +171,7 @@ export async function loginController(req, res) {
 
 export async function verifyEmail(req, res) {
     try {
+        const clientUrl = (process.env.CLIENT_URL || "").replace(/\/+$/, "")
         const { token } = req.query;
         if (!token) {
             return res.send(`
@@ -208,7 +211,7 @@ body {
 <div class="container">
     <h2>❌ Invalid Request</h2>
     <p>Verification token is missing.</p>
-    <a href="${process.env.FRONTEND_URL}/register" class="btn">Go Back</a>
+    <a href="${clientUrl}/register" class="btn">Go Back</a>
 </div>
 </body>
 </html>
@@ -254,7 +257,7 @@ body {
 <div class="container">
     <h2>❌ User Not Found</h2>
     <p>This account does not exist.</p>
-    <a href="${process.env.FRONTEND_URL}/register" class="btn">Register Again</a>
+    <a href="${clientUrl}/register" class="btn">Register Again</a>
 </div>
 </body>
 </html>
@@ -295,7 +298,7 @@ body {
 <div class="container">
     <h2>✅ Already Verified</h2>
     <p>Your email is already verified. You can login.</p>
-    <a href="${process.env.FRONTEND_URL}/login" class="btn">Go to Login</a>
+    <a href="${clientUrl}/login" class="btn">Go to Login</a>
 </div>
 </body>
 </html>
@@ -344,7 +347,7 @@ body {
     <h2>🎉 Email Verified Successfully!</h2>
     <p>Your account is now active.</p>
 
-    <a href="${process.env.FRONTEND_URL}/login" class="btn">
+    <a href="${clientUrl}/login" class="btn">
         Go to Login
     </a>
 </div>
@@ -384,13 +387,13 @@ body {
     background:#3b82f6;
     color:#fff;
     text-decoration:none;
-    border-radius:6px;
+    border-radius:6px; 
 }</style></head>
 <body>
 <div class="container">
     <h2>⚠️ Link Expired</h2>
     <p>Your verification link is invalid or expired.</p>
-    <a href="${process.env.CLIENT_URL}/resend-verification" class="btn">
+    <a href="${clientUrl}/resend-verification" class="btn">
         Resend Email
     </a>
 </div>

@@ -5,6 +5,8 @@ dotenv.config();
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
+    port: 587,
+    secure: false,
     auth: {
         type: 'OAuth2',
         user: process.env.GOOGLE_USER,
@@ -19,7 +21,7 @@ transporter.verify((error, success) => {
     if (error) {
         console.error('Error connecting to email server:', error);
     } else {
-        console.log('Email server is ready to send messages',success);
+        console.log('Email server is ready to send messages', success);
     }
 });
 export async function sendEmail({ to, subject, html, text }) {
