@@ -5,6 +5,7 @@ import { Navigate } from 'react-router-dom'
 import { useChat } from '../hooks/useChat.js'
 import remarkGfm from 'remark-gfm'
 import { FiMenu, FiX } from 'react-icons/fi'
+import Dictaphone from '../Components/Dictaphone .jsx'
 
 const Dashboard = () => {
   const chat = useChat()
@@ -141,20 +142,23 @@ const Dashboard = () => {
 </div>
     {/* Input */}
     <footer className="shrink-0 p-4 border-t border-white/10 bg-[#242935] w-full max-w-4xl mx-auto mb-4 md:mb-8 rounded-2xl">
-      <form onSubmit={handleSubmitMessage} className="flex gap-3">
+      <form onSubmit={handleSubmitMessage} className="flex items-center gap-2 sm:gap-3">
         <input
           value={chatInput}
           onChange={(e) => setChatInput(e.target.value)}
           placeholder="Ask anything..."
-          className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-white/40"
+          className="flex-1 min-w-0 px-3 sm:px-4 py-3 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-white/40"
         />
-        <button
-          type="submit"
-          disabled={!chatInput.trim() || isLoading}
-          className="px-5 py-3 bg-gradient-to-r from-red-500 to-orange-400 rounded-2xl text-white transition disabled:opacity-50"
-        >
-          Send
-        </button>
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <Dictaphone setChatInput={setChatInput} />
+          <button
+            type="submit"
+            disabled={!chatInput.trim() || isLoading}
+            className="px-3 sm:px-5 py-3 bg-gradient-to-r from-red-500 to-orange-400 rounded-2xl text-white transition disabled:opacity-50 shrink-0"
+          >
+            Send
+          </button>
+        </div>
       </form>
     </footer>
   </section>
