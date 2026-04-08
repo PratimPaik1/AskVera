@@ -5,6 +5,7 @@ import { Navigate } from 'react-router-dom'
 import { useChat } from '../hooks/useChat.js'
 import remarkGfm from 'remark-gfm'
 import { FiMenu, FiX } from 'react-icons/fi'
+import Dictaphone from '../components/Dictaphone.jsx'
 
 const Dashboard = () => {
   const chat = useChat()
@@ -148,6 +149,7 @@ const Dashboard = () => {
           placeholder="Ask anything..."
           className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-white/40"
         />
+        <Dictaphone setChatInput={setChatInput} />
         <button
           type="submit"
           disabled={!chatInput.trim() || isLoading}
