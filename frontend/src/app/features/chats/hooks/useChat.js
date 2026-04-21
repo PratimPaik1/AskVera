@@ -2,7 +2,7 @@ import { initializationSocketConnection } from "../services/chat.socket.js";
 import { sendMessage, getChats, getMessage } from "../services/chat.api.js";
 import{ setChats, setCurrentChatId, setLoading, setError, createNewChat, addNewMessage, addMessages } from "../chat.slice";
 import { useDispatch } from "react-redux";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 
 export const useChat = () => {
@@ -193,12 +193,12 @@ export const useChat = () => {
         listenersBoundRef.current = true
     }
 
-    function connectSocket(userId) {
+    const connectSocket = useCallback((userId) => {
         const socket = initializationSocketConnection(userId)
         socketRef.current = socket
         bindSocketListeners(socket)
         return socket
-    }
+    }, [])
 
     useEffect(() => {
         return () => {
@@ -216,7 +216,7 @@ export const useChat = () => {
     }, [])
 
 
-    async function handleSendMessage({ message, chatId, userId }) {
+    const handleSendMessage = useCallback(async ({ message, chatId, userId }) => {
         dispatch(setLoading(true))
         const requestId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`
         activeRequestIdRef.current = requestId
@@ -272,44 +272,55 @@ export const useChat = () => {
             scheduleCleanup(requestId)
         }
 
-    }
+    }, [connectSocket, dispatch])
 
-    async function handleGetChats() {
+    const handleGetChats = useCallback(async () => {
         dispatch(setLoading(true))
-        const data = await getChats()
-        const { chats } = data
-        dispatch(setChats(chats.reduce((acc, chat) => {
-            acc[ chat._id ] = {
-                id: chat._id,
-                title: chat.title,
-                messages: [],
-                lastUpdated: chat.updatedAt,
-            }
-            return acc
-        }, {})))
-        dispatch(setLoading(false))
-    }
+        try {
+            const data = await getChats()
+            const chats = Array.isArray(data?.chats) ? data.chats : []
+            dispatch(setChats(chats.reduce((acc, chat) => {
+                if (!chat?._id) return acc
+                acc[ chat._id ] = {
+                    id: chat._id,
+                    title: chat.title || "New Chat",
+                    messages: [],
+                    lastUpdated: chat.updatedAt,
+                }
+                return acc
+            }, {})))
+            dispatch(setError(null))
+        } catch (err) {
+            dispatch(setError(err?.response?.data?.message || "Failed to fetch chats"))
+        } finally {
+            dispatch(setLoading(false))
+        }
+    }, [dispatch])
 
-    async function handleOpenChat(chatId, chats) {
+    const handleOpenChat = useCallback(async (chatId, chats) => {
 
         // console.log(chats[ chatId ]?.messages.length)
 
         if (chats[ chatId ]?.messages.length === 0) {
-            const data = await getMessage(chatId)
-            const { messages } = data
+            try {
+                const data = await getMessage(chatId)
+                const messages = Array.isArray(data?.messages) ? data.messages : []
 
-            const formattedMessages = messages.map(msg => ({
-                content: msg.content,
-                role: msg.role,
-            }))
+                const formattedMessages = messages.map(msg => ({
+                    content: msg?.content || "",
+                    role: msg?.role || "ai",
+                }))
 
-            dispatch(addMessages({
-                chatId,
-                messages: formattedMessages,
-            }))
+                dispatch(addMessages({
+                    chatId,
+                    messages: formattedMessages,
+                }))
+            } catch (err) {
+                dispatch(setError(err?.response?.data?.message || "Failed to fetch chat messages"))
+            }
         }
         dispatch(setCurrentChatId(chatId))
-    }
+    }, [dispatch])
 
     return {
         initializationSocketConnection: connectSocket,

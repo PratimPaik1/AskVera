@@ -6,10 +6,10 @@ import { useSelector } from "react-redux"
 import { useAuth } from "../../auth/hooks/use.auth";
 
 export default function Home() {
-  const {handelLogout}=useAuth()
+  const { handelLogout } = useAuth()
 
 
-  const { user, loading, error } = useSelector((state) => state.auth);
+  const { user, loading } = useSelector((state) => state.auth);
 
   const lines = [
     "Ask anything. Get instant answers.",
@@ -121,36 +121,36 @@ export default function Home() {
       area.removeEventListener("mouseenter", showCursor);
       area.removeEventListener("mouseleave", hideCursor);
     };
-  }, []);
+  }, [lines.length]);
 
   if (loading) {
     return (
-     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-950 text-white relative overflow-hidden">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-950 text-white relative overflow-hidden">
 
-  {/* Background glow */}
-  <div className="absolute w-[400px] h-[400px] bg-red-500/20 blur-3xl rounded-full animate-pulse"></div>
+        {/* Background glow */}
+        <div className="absolute w-[400px] h-[400px] bg-red-500/20 blur-3xl rounded-full animate-pulse"></div>
 
-  {/* Logo */}
-  <h1 className="text-4xl font-extrabold bg-gradient-to-r from-red-500 via-orange-400 to-yellow-300 bg-clip-text text-transparent mb-8 tracking-wide">
-    AskVera
-  </h1>
+        {/* Logo */}
+        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-red-500 via-orange-400 to-yellow-300 bg-clip-text text-transparent mb-8 tracking-wide">
+          AskVera
+        </h1>
 
-  {/* Glass Loader Card */}
-  <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 flex flex-col items-center shadow-2xl">
+        {/* Glass Loader Card */}
+        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 flex flex-col items-center shadow-2xl">
 
-    {/* Animated Rings */}
-    <div className="relative flex items-center justify-center">
-      <div className="absolute w-16 h-16 border-4 border-red-500/30 rounded-full animate-ping"></div>
-      <div className="w-12 h-12 border-4 border-gray-700 border-t-red-500 rounded-full animate-spin"></div>
-    </div>
+          {/* Animated Rings */}
+          <div className="relative flex items-center justify-center">
+            <div className="absolute w-16 h-16 border-4 border-red-500/30 rounded-full animate-ping"></div>
+            <div className="w-12 h-12 border-4 border-gray-700 border-t-red-500 rounded-full animate-spin"></div>
+          </div>
 
-    {/* Text */}
-    <p className="text-gray-300 mt-6 text-sm tracking-wide animate-pulse">
-      Preparing your AI experience...
-    </p>
-  </div>
+          {/* Text */}
+          <p className="text-gray-300 mt-6 text-sm tracking-wide animate-pulse">
+            Preparing your AI experience...
+          </p>
+        </div>
 
-</div>
+      </div>
     );
   }
 
@@ -194,7 +194,7 @@ export default function Home() {
             <span className="text-green-400 font-medium hover:scale-95 transition ease-in">
               Hello, {user?.userName}
             </span>
-            <span className="text-red-400 font-medium hover:scale-95 transition ease-in" onClick={()=>{handelLogout()}}>Log Out</span>
+            <span className="text-red-400 font-medium hover:scale-95 transition ease-in" onClick={() => { handelLogout() }}>Log Out</span>
           </>
           )}
         </div>
@@ -209,14 +209,23 @@ export default function Home() {
         <p className="hero-sub text-gray-400 max-w-xl mb-8 transition-opacity duration-500">
           {lines[index]}
         </p>
+        <div className="flex flex-col gap-9 sm:flex-row">
+          <Link
+            to={!user ? "/login" : "/dashboard"}
+            className="block cta-btn px-6 py-3 bg-gradient-to-r from-red-500 to-orange-400 rounded-xl font-semibold hover:scale-105 transition text-center"
+          >
+            {!user ? "Get Started" : "Chat with AskVera"}
+          </Link>
 
-        <Link
-          to={!user ? "/login" : "/dashboard"}
-          className="cta-btn px-6 py-3 bg-gradient-to-r from-red-500 to-orange-400 rounded-xl font-semibold hover:scale-105 transition"
-        >
-          {!user?"Get Started":"Chat with AskVera"}
-        </Link>
-      </section>
+          {user && (
+            <Link
+              to="build"
+              className="block cta-btn px-6 py-3 bg-gradient-to-r from-red-500 to-orange-400 rounded-xl font-semibold hover:scale-105 transition text-center"
+            >
+              Build with AskVera
+            </Link>
+          )}
+        </div>      </section>
 
       {/* Features */}
       <section className="px-6 py-16 grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
@@ -249,7 +258,10 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="text-center py-6 border-t border-gray-800 text-gray-500 text-sm">
-        © {new Date().getFullYear()} AskVera
+        © {new Date().getFullYear()} AskVera. All rights reserved.
+        <span className="block mt-1 text-gray-400">
+          Crafted by Pratim Paik
+        </span>
       </footer>
     </div>
   );

@@ -5,10 +5,11 @@ import { Navigate } from 'react-router-dom'
 import { useChat } from '../hooks/useChat.js'
 import remarkGfm from 'remark-gfm'
 import { FiMenu, FiX } from 'react-icons/fi'
-import Dictaphone from '../Components/Dictaphone .jsx'
+import Dictaphone from '../Components/Dictaphone.jsx'
 
 const Dashboard = () => {
   const chat = useChat()
+  const { handleGetChats, initializationSocketConnection } = chat
   const [chatInput, setChatInput] = useState('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
@@ -20,18 +21,18 @@ const Dashboard = () => {
   const userId = user?.id || user?._id
   const streamingMessage = chat.streamingMessage
   const isStreamingCurrentChat =
-    !!streamingMessage &&
-    (!!currentChatId ? streamingMessage.chatId === currentChatId : true)
+    Boolean(streamingMessage) &&
+    (!currentChatId || streamingMessage.chatId === currentChatId)
 
   useEffect(() => {
     if (!userId) return
-    chat.handleGetChats()
-  }, [userId])
+    handleGetChats()
+  }, [userId, handleGetChats])
 
   useEffect(() => {
     if (!userId) return
-    chat.initializationSocketConnection(userId)
-  }, [userId])
+    initializationSocketConnection(userId)
+  }, [userId, initializationSocketConnection])
 
   const handleSubmitMessage = (e) => {
     e.preventDefault()

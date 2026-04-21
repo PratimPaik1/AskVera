@@ -2,6 +2,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth.routes.js";
 import chatRouter from "./routes/chat.routes.js";
+import buildRouter from './routes/build.route.js'
 import cors from "cors"
 import path from "path"
 
@@ -19,7 +20,7 @@ app.use(cookieParser())
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }))
 app.use("/api/auth",authRouter)
 app.use("/api/chat",chatRouter)
-
+app.use("/api/build",buildRouter)
 
 // Serve static
 app.use(express.static(path.join(__dirname, "..", "public")));

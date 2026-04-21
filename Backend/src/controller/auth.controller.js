@@ -83,14 +83,14 @@ export async function registerController(req, res) {
         });
 
     } catch (err) {
-        console.log(err)
         if (err.code === 11000) {
             return res.status(400).json({
-                message: "Duplicate email",
+                 message: "User already exists",
+                success: false,
+                err: "User already exists"
             });
         }
 
-        console.error(err);
 
         res.status(500).json({
             message: "Server error",
@@ -157,7 +157,6 @@ export async function loginController(req, res) {
             }
         })
     } catch (err) {
-        console.error(err);
         res.status(500).json({
             message: "Server error",
             success: false,

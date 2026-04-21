@@ -10,16 +10,17 @@ const Dictaphone = ({ setChatInput }) => {
     browserSupportsSpeechRecognition,
   } = useSpeechRecognition()
 
-  if (!browserSupportsSpeechRecognition) {
-    return console.log("Voice input is not supported in this browser.")
-  }
-
   useEffect(() => {
+    if (!browserSupportsSpeechRecognition) return
     if (!listening && transcript.trim()) {
       setChatInput(transcript.trim())
       resetTranscript()
     }
-  }, [listening, transcript, setChatInput, resetTranscript])
+  }, [browserSupportsSpeechRecognition, listening, transcript, setChatInput, resetTranscript])
+
+  if (!browserSupportsSpeechRecognition) {
+    return null
+  }
 
   const handleToggleListening = () => {
     if (listening) {

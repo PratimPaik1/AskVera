@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { useAuth } from "../hooks/use.auth";
 import { useSelector } from "react-redux";
 
 export default function RegisterPage() {
 
-  const { user, loading, error } = useSelector((state) => state.auth);
+  const { user, loading } = useSelector((state) => state.auth);
 
   const [form, setForm] = useState({
     userName: "",
@@ -52,9 +52,9 @@ export default function RegisterPage() {
 </div>
     );
   }
-if(!loading && user){
-  return navigate("/")
-}
+  if (!loading && user) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -104,6 +104,10 @@ if(!loading && user){
         navigate("/verifyEmail");
       }
     } catch (err) {
+      let newErrors={}
+      newErrors.response=err.response.data.message
+      setErrors(newErrors)
+      
       console.error(err);
     }
   };
@@ -118,7 +122,12 @@ if(!loading && user){
           AskVera
         </h1>
         <h2 className="text-xl font-semibold text-center mb-6">Register</h2>
-
+          {errors.response && (
+              <p className="text-red-600 text-[20px] mt-1 text-center">
+                {errors.response
+                }
+              </p>
+            )}
         <form onSubmit={handleSubmit} className="space-y-4">
 
           {/* Username */}
