@@ -5,7 +5,9 @@
   "main": "Server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon Server.js"
+    "dev": "nodemon Server.js",
+    "test:jsx": "node src/services/agents/test_jsx_validation.js",
+    "debug:jsx": "node src/services/agents/debug_jsx.js"
   },
   "keywords": [],
   "author": "",
